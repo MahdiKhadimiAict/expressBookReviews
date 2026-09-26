@@ -1,0 +1,18 @@
+<%- include("partials/head.ejs") %>
+
+<h1>All books</h1>
+<p class="sub">Pick a book to read its reviews or write one of your own.</p>
+
+<% books.forEach(function (book) { %>
+  <div class="card booklist">
+    <a href="/ui/books/<%= book.isbn %>">
+      <h3><%= book.title %></h3>
+      <div class="meta">
+        by <%= book.author %> &middot; <%= book.isbn %> &middot;
+        <%= book.reviewCount %> <%= book.reviewCount === 1 ? "review" : "reviews" %>
+      </div>
+    </a>
+  </div>
+<% }) %>
+
+<%- include("partials/foot.ejs") %>

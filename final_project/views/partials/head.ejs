@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> &middot; Book Reviews</title>
+  <style>
+    :root { --ink: #1f2933; --muted: #6b7784; --line: #dde3e9; --bg: #f6f8fa; --accent: #2b6cb0; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink);
+           font: 16px/1.55 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    a { color: var(--accent); }
+    header { background: #fff; border-bottom: 1px solid var(--line); }
+    .bar { max-width: 880px; margin: 0 auto; padding: 14px 20px;
+           display: flex; align-items: center; gap: 16px; }
+    .bar a.brand { font-weight: 700; text-decoration: none; color: var(--ink); margin-right: auto; }
+    .bar form { margin: 0; }
+    .bar .who { color: var(--muted); font-size: 14px; }
+    button, .btn { font: inherit; cursor: pointer; border-radius: 6px;
+                   border: 1px solid var(--line); background: #fff; color: var(--ink);
+                   padding: 7px 13px; text-decoration: none; display: inline-block; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    button.danger { color: #b03a3a; border-color: #e6c4c4; }
+    main { max-width: 880px; margin: 0 auto; padding: 22px 20px 60px; }
+    h1 { font-size: 26px; margin: 0 0 4px; }
+    h2 { font-size: 19px; margin: 30px 0 12px; }
+    .sub { color: var(--muted); margin: 0 0 22px; }
+    .flash { padding: 11px 15px; border-radius: 7px; margin: 0 0 20px;
+             border: 1px solid transparent; font-size: 15px; }
+    .flash.success { background: #e8f6ed; border-color: #b7e0c4; color: #1e6b39; }
+    .flash.error { background: #fdecec; border-color: #f2c2c2; color: #a12b2b; }
+    .card { background: #fff; border: 1px solid var(--line); border-radius: 9px;
+            padding: 17px 19px; margin-bottom: 13px; }
+    .booklist a { display: block; text-decoration: none; color: var(--ink); }
+    .booklist a:hover h3 { color: var(--accent); }
+    .booklist h3 { margin: 0 0 3px; font-size: 17px; }
+    .meta { color: var(--muted); font-size: 14px; }
+    .review { border-left: 3px solid var(--line); padding-left: 14px; margin-bottom: 16px; }
+    .review p { margin: 6px 0 0; }
+    .stars { color: #d98324; letter-spacing: 2px; }
+    .tag { display: inline-block; background: #eef2f7; color: var(--muted);
+           border-radius: 4px; padding: 1px 7px; font-size: 12px; }
+    form.stacked label { display: block; font-size: 14px; color: var(--muted); margin: 13px 0 5px; }
+    input[type=text], input[type=password], input[type=number], textarea {
+      width: 100%; font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; }
+    input[type=number] { width: 90px; }
+    textarea { resize: vertical; min-height: 82px; }
+    .row { display: flex; gap: 9px; align-items: center; margin-top: 16px; }
+    .hint { color: var(--muted); font-size: 14px; }
+    .two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 640px) { .two { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="bar">
+      <a class="brand" href="/ui/books">Book Reviews</a>
+      <a href="/ui/books">Browse</a>
+      <% if (user) { %>
+        <span class="who">Signed in as <%= user.username %></span>
+        <form method="post" action="/ui/logout">
+          <button type="submit">Log out</button>
+        </form>
+      <% } else { %>
+        <a href="/ui/login">Log in</a>
+      <% } %>
+    </div>
+  </header>
+  <main>
+    <% const queued = messages || {}; %>
+    <% (queued.success || []).forEach(function (text) { %>
+      <div class="flash success" role="status"><%= text %></div>
+    <% }) %>
+    <% (queued.error || []).forEach(function (text) { %>
+      <div class="flash error" role="alert"><%= text %></div>
+    <% }) %>

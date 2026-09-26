@@ -1,0 +1,30 @@
+<%- include("partials/head.ejs") %>
+
+<h1>Log in or register</h1>
+<p class="sub">The pages use a session. The JSON API on the same server uses bearer tokens instead.</p>
+
+<div class="two">
+  <form class="stacked card" method="post" action="/ui/login">
+    <h2 style="margin-top:0">Log in</h2>
+    <label for="login-username">Username</label>
+    <input id="login-username" name="username" type="text" autocomplete="username" required>
+    <label for="login-password">Password</label>
+    <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+    <div class="row">
+      <button class="primary" type="submit">Log in</button>
+    </div>
+  </form>
+
+  <form class="stacked card" method="post" action="/ui/register">
+    <h2 style="margin-top:0">Register</h2>
+    <label for="reg-username">Username</label>
+    <input id="reg-username" name="username" type="text" autocomplete="username" required>
+    <label for="reg-password">Password</label>
+    <input id="reg-password" name="password" type="password" autocomplete="new-password" required>
+    <div class="row">
+      <button type="submit">Create account</button>
+    </div>
+  </form>
+</div>
+
+<%- include("partials/foot.ejs") %>

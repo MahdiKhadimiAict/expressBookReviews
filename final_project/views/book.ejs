@@ -1,0 +1,62 @@
+<%- include("partials/head.ejs") %>
+
+<h1><%= book.title %></h1>
+<p class="sub">
+  by <%= book.author %> &middot; ISBN <%= isbn %> &middot;
+  <span class="tag"><%= reviews.length %> <%= reviews.length === 1 ? "review" : "reviews" %></span>
+</p>
+
+<h2>Reviews</h2>
+<% if (reviews.length === 0) { %>
+  <p class="hint">No one has reviewed this book yet.</p>
+<% } %>
+<% reviews.forEach(function (review) { %>
+  <div class="review">
+    <strong><%= review.username %></strong>
+    <% if (user && review.username === user.username) { %><span class="tag">your review</span><% } %>
+    <% if (review.modified) { %><span class="tag">edited</span><% } %>
+    <div class="stars" aria-label="<%= review.rating %> out of 5">
+      <% for (let i = 1; i <= 5; i++) { %><%= i <= review.rating ? "*" : "." %><% } %>
+      <span class="meta">&nbsp;<%= review.rating %>/5</span>
+    </div>
+    <p><%= review.review %></p>
+  </div>
+<% }) %>
+
+<% if (!user) { %>
+  <h2>Write a review</h2>
+  <p class="hint"><a href="/ui/login">Log in</a> or <a href="/ui/login">register</a> to review this book.</p>
+
+<% } else if (mine) { %>
+  <h2>Edit your review</h2>
+  <form class="stacked card" method="post" action="/ui/books/<%= isbn %>/review/edit">
+    <label for="edit-rating">Rating (1 to 5)</label>
+    <input id="edit-rating" name="rating" type="number" min="1" max="5" step="1"
+           value="<%= mine.rating %>" required>
+    <label for="edit-review">Your review</label>
+    <textarea id="edit-review" name="review" required><%= mine.review %></textarea>
+    <div class="row">
+      <button class="primary" type="submit">Save changes</button>
+    </div>
+  </form>
+  <form method="post" action="/ui/books/<%= isbn %>/review/delete"
+        onsubmit="return confirm('Delete your review of this book?');">
+    <button class="danger" type="submit">Delete my review</button>
+  </form>
+
+<% } else { %>
+  <h2>Write a review</h2>
+  <form class="stacked card" method="post" action="/ui/books/<%= isbn %>/review">
+    <label for="rating">Rating (1 to 5)</label>
+    <input id="rating" name="rating" type="number" min="1" max="5" step="1" value="5" required>
+    <label for="review">Your review</label>
+    <textarea id="review" name="review" placeholder="What did you think of the book?" required></textarea>
+    <div class="row">
+      <button class="primary" type="submit">Post review</button>
+    </div>
+  </form>
+<% } %>
+
+<p class="hint" style="margin-top:26px"><a href="/ui/books">&larr; All books</a></p>
+
+<%- include("partials/foot.ejs") %>
