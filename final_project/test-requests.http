@@ -72,16 +72,27 @@ GET {{baseUrl}}/author/Unknown
 ### 12. Get books by title, case insensitive, partial title allowed  ->  200 [book, ...]
 GET {{baseUrl}}/title/the
 
-### 13. Get all reviews of a book  ->  200 { "alice": {username, rating, review} }
+### 13. A name that is only whitespace  ->  400 {message}. It is rejected before the
+###     data source is read, so a blank search cannot quietly match every author
+###     that has a space in the name. Left alone it answered 200 with 6 books.
+GET {{baseUrl}}/author/%20
+
+### 14. The same for a title. Left alone, a blank title matched all 10 books.
+GET {{baseUrl}}/title/%20
+
+### 15. A padded but real name is trimmed and still matches  ->  200 [book, ...]
+GET {{baseUrl}}/author/%20Jane%20Austen%20
+
+### 16. Get all reviews of a book  ->  200 { "alice": {username, rating, review} }
 GET {{baseUrl}}/review/{{isbn}}
 
-### 14. Get one user's review of a book  ->  200 { "alice": {username, rating, review} }
+### 17. Get one user's review of a book  ->  200 { "alice": {username, rating, review} }
 GET {{baseUrl}}/review/{{isbn}}?username={{username}}
 
-### 15. Get the initial, never edited, reviews of every book, keyed by ISBN
+### 18. Get the initial, never edited, reviews of every book, keyed by ISBN
 GET {{baseUrl}}/review/initial
 
-### 16. Add a review, requires a token  ->  201 {username, rating, review, message}
+### 19. Add a review, requires a token  ->  201 {username, rating, review, message}
 POST {{baseUrl}}/customer/auth/review/{{isbn}}
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -91,7 +102,7 @@ Content-Type: application/json
   "review": "A masterpiece, read it twice."
 }
 
-### 17. Add a second review for the same book  ->  409 {message}, use the PUT request instead
+### 20. Add a second review for the same book  ->  409 {message}, use the PUT request instead
 POST {{baseUrl}}/customer/auth/review/{{isbn}}
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -101,7 +112,7 @@ Content-Type: application/json
   "review": "A duplicate of my own review."
 }
 
-### 18. Add a review with an out of range rating  ->  400 {message}
+### 21. Add a review with an out of range rating  ->  400 {message}
 POST {{baseUrl}}/customer/auth/review/{{isbn}}
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -111,7 +122,7 @@ Content-Type: application/json
   "review": "Rating must be 1 to 5."
 }
 
-### 19. Add a review for a malformed ISBN  ->  400 {message}
+### 22. Add a review for a malformed ISBN  ->  400 {message}
 POST {{baseUrl}}/customer/auth/review/not-an-isbn
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -121,7 +132,7 @@ Content-Type: application/json
   "review": "The ISBN is malformed."
 }
 
-### 20. Add a review without a token  ->  401 {message}
+### 23. Add a review without a token  ->  401 {message}
 POST {{baseUrl}}/customer/auth/review/{{isbn}}
 Content-Type: application/json
 
@@ -130,7 +141,7 @@ Content-Type: application/json
   "review": "No token supplied."
 }
 
-### 21. Modify your own review, here sent as a hyphenated ISBN  ->  200 {username, rating, review, modified:true, message}
+### 24. Modify your own review, here sent as a hyphenated ISBN  ->  200 {username, rating, review, modified:true, message}
 PUT {{baseUrl}}/customer/auth/review/978-0-14-143951-8
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -140,10 +151,10 @@ Content-Type: application/json
   "review": "Still a masterpiece on a reread."
 }
 
-### 22. Step 21 removed this review from /review/initial, step 15 proves it
+### 25. Step 24 removed this review from /review/initial, step 18 proves it
 GET {{baseUrl}}/review/initial
 
-### 23. Modify a book you have not reviewed  ->  404 {message}
+### 26. Modify a book you have not reviewed  ->  404 {message}
 PUT {{baseUrl}}/customer/auth/review/9780140447699
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -153,11 +164,11 @@ Content-Type: application/json
   "review": "Nothing to modify here."
 }
 
-### 24. Delete your own review, here sent as the ISBN-10  ->  200 {message}
+### 27. Delete your own review, here sent as the ISBN-10  ->  200 {message}
 DELETE {{baseUrl}}/customer/auth/review/0141439513
 Authorization: Bearer {{token}}
 
-### 25. Delete it again  ->  404 {message}
+### 28. Delete it again  ->  404 {message}
 DELETE {{baseUrl}}/customer/auth/review/{{isbn}}
 Authorization: Bearer {{token}}
 
@@ -168,19 +179,19 @@ Authorization: Bearer {{token}}
 ### banner, it only shows the page source.
 ### ------------------------------------------------------------------
 
-### 26. The book list page
+### 29. The book list page
 GET {{baseUrl}}/ui/books
 
-### 27. A book page, no reviews yet and no session, so it invites you to log in
+### 30. A book page, no reviews yet and no session, so it invites you to log in
 GET {{baseUrl}}/ui/books/{{isbn}}
 
-### 28. The log in and register page
+### 31. The log in and register page
 GET {{baseUrl}}/ui/login
 
-### 29. Logged in, the book page offers the add review form
+### 32. Logged in, the book page offers the add review form
 GET {{baseUrl}}/ui/books/{{isbn}}
 
-### 30. Post the add form. It redirects to the book page, which shows
+### 33. Post the add form. It redirects to the book page, which shows
 ###     the message banner "Review by <user> added to the book with
 ###     ISBN ..." above the reviews, with the new review among them.
 POST {{baseUrl}}/ui/books/{{isbn}}/review
@@ -188,14 +199,14 @@ Content-Type: application/x-www-form-urlencoded
 
 rating=5&review=A masterpiece from a form.
 
-### 31. Post it again  ->  redirected back with "You have already reviewed
+### 34. Post it again  ->  redirected back with "You have already reviewed
 ###     the book with ISBN ... Use PUT to modify it." in the banner
 POST {{baseUrl}}/ui/books/{{isbn}}/review
 Content-Type: application/x-www-form-urlencoded
 
 rating=3&review=A duplicate of my own review.
 
-### 32. Post the edit form. The banner reads "Review by <user> updated on
+### 35. Post the edit form. The banner reads "Review by <user> updated on
 ###     the book with ISBN ..." and the review below shows the new text
 ###     and an "edited" tag.
 POST {{baseUrl}}/ui/books/{{isbn}}/review/edit
@@ -203,27 +214,27 @@ Content-Type: application/x-www-form-urlencoded
 
 rating=4&review=Still a masterpiece on a reread.
 
-### 33. Post the delete form. The banner reads "Review by <user> removed
+### 36. Post the delete form. The banner reads "Review by <user> removed
 ###     from the book with ISBN ..." and the review is gone from the list.
 POST {{baseUrl}}/ui/books/{{isbn}}/review/delete
 
-### 34. Post it again  ->  redirected back with "You have not reviewed
+### 37. Post it again  ->  redirected back with "You have not reviewed
 ###     the book with ISBN ... yet." in the banner
 POST {{baseUrl}}/ui/books/{{isbn}}/review/delete
 
-### 35. A rating outside 1 to 5  ->  "'rating' must be an integer between 1 and 5."
+### 38. A rating outside 1 to 5  ->  "'rating' must be an integer between 1 and 5."
 POST {{baseUrl}}/ui/books/{{isbn}}/review
 Content-Type: application/x-www-form-urlencoded
 
 rating=42&review=Out of range.
 
-### 36. The pages redirect to the book list with a banner when the ISBN is unknown
+### 39. The pages redirect to the book list with a banner when the ISBN is unknown
 GET {{baseUrl}}/ui/books/9999999999999
 
-### 37. A page that does not exist, same treatment
+### 40. A page that does not exist, same treatment
 GET {{baseUrl}}/ui/nowhere
 
-### 38. Log out
+### 41. Log out
 POST {{baseUrl}}/ui/logout
 
 ### ------------------------------------------------------------------
@@ -232,19 +243,18 @@ POST {{baseUrl}}/ui/logout
 ### in-memory store. These are here to show what they are reading.
 ### ------------------------------------------------------------------
 
-### 39. Everything the public routes read for GET /, GET /author/:author and GET /title/:title
+### 42. Everything the public routes read for GET /, GET /author/:author and GET /title/:title
 GET {{baseUrl}}/internal/books
 
-### 40. What GET /isbn/:isbn reads, and the answers it relays
+### 43. What GET /isbn/:isbn reads, and the answers it relays
 GET {{baseUrl}}/internal/books/isbn/{{isbn}}
 ###
 GET {{baseUrl}}/internal/books/isbn/abc
 ###
 GET {{baseUrl}}/internal/books/isbn/9780000000000
 
-### 41. A read whose data source is unreachable. Start the server with
+### 44. A read whose data source is unreachable. Start the server with
 ###     BOOKS_DATA_URL pointing somewhere dead, for example
 ###     BOOKS_DATA_URL=http://127.0.0.1:1/internal npm start
-###     and any of steps 5 to 12 answers 502 {message} instead.
+###     and any of steps 5 to 15 answers 502 {message} instead.
 GET {{baseUrl}}/isbn/{{isbn}}
-

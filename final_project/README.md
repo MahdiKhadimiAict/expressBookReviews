@@ -56,10 +56,10 @@ returned by any endpoint.
 | Method | Path | Success | Errors |
 | --- | --- | --- | --- |
 | POST | `/register` | 201 `{message, user:{username}}` | 400 missing fields, 409 username taken |
-| GET | `/` | 200 array of all 10 books | 502 data source unreachable |
-| GET | `/isbn/:isbn` | 200 book | 400 malformed ISBN, 404 unknown ISBN, 502 data source unreachable |
-| GET | `/author/:author` | 200 array of books | 404 no match, 502 data source unreachable |
-| GET | `/title/:title` | 200 array of books | 404 no match, 502 data source unreachable |
+| GET | `/` | 200 array of all 10 books | 502 data source unreachable or wrong shape |
+| GET | `/isbn/:isbn` | 200 book | 400 malformed ISBN, 404 unknown ISBN, 502 data source unreachable or wrong shape |
+| GET | `/author/:author` | 200 array of books | 400 empty name, 404 no match, 502 data source unreachable or wrong shape |
+| GET | `/title/:title` | 200 array of books | 400 empty name, 404 no match, 502 data source unreachable or wrong shape |
 | GET | `/review/:isbn` | 200 reviews of that book | 400 malformed, 404 unknown ISBN |
 | GET | `/review/:isbn?username=name` | 200 that one review | 400 malformed, 404 unknown ISBN or no such review |
 | GET | `/review/initial` | 200 every review that was never edited, keyed by ISBN | 404 none exist |
@@ -133,10 +133,25 @@ Three things keep the answer the same as reading the store directly:
   is already in the next read, and `GET /` and `GET /isbn/:isbn` cannot show a
   stale one.
 
-A read that never reaches the data source, because the host is down or the call
-ran past `BOOKS_DATA_TIMEOUT`, is the only failure the route cannot pass on. It
-becomes **502** with a message that does not name the host or the port; the
-underlying cause stays on the server's error log.
+## What a read rejects
+
+`BOOKS_DATA_URL` is just a setting, so it can point at the wrong thing, and a
+caller can send a name that means nothing. Both are reported rather than guessed
+at, because a wrong 200 is worse than an honest error.
+
+| Situation | Answer | Why not something else |
+| --- | --- | --- |
+| `:author` or `:title` is empty or only whitespace | `400 'author' must not be empty.` | A blank name matches every author with a space in it, so `/author/%20` used to answer 200 with a sixth of the catalogue |
+| The source never answers, or answers too late | `502 The book data source could not be reached.` | Carries no host or port, so the setting is not leaked to a caller |
+| A 200 arrives but the body is not the documented shape | `502 The book data source returned an unexpected response.` | A wrong host, a proxy or a front page that answers 200 with HTML. Without this the searches threw a `TypeError` and escaped as `500 response.data.filter is not a function` |
+| A book in the list has no `author`, or a number where one belongs | That book is skipped, the rest are still searched | One malformed row should not take the other nine down with it |
+| The 400 and the 502 happen at once | `400` | The name is rejected before any HTTP call, so a bad request is never reported as an upstream failure |
+
+Two of these are deliberately not symmetrical. A **list** is only checked for being
+a list, because a list that carries one odd row is still a list and each row is
+judged on its own when the search runs. A **single book** lookup has no such
+fallback, so it also requires the three fields the README documents, which is what
+catches a 200 carrying `{"message":"not found"}` from a proxy.
 
 The `/internal` data route answers exactly what `GET /` and `GET /isbn/:isbn`
 already expose, so publishing it opens nothing new. It is mounted before the
@@ -227,7 +242,7 @@ event loop and concurrent users are served in parallel rather than queued behind
 
 `test-requests.http` holds the full request collection. Open it with the VS Code REST Client
 extension, or import it into Postman via Admin > Import, and send the requests from the top: step 3
-returns the token to paste into the `@token` variable at the top of the file. Steps 26 to 38 cover
+returns the token to paste into the `@token` variable at the top of the file. Steps 29 to 41 cover
 the pages and are meant to be opened in a browser, since the REST Client keeps no session cookie
 and cannot show the message banner.
 
@@ -249,6 +264,10 @@ curl http://localhost:3000/internal/books
 # and a read with the data source pointed somewhere dead
 BOOKS_DATA_URL=http://127.0.0.1:1/internal npm start
 curl -i http://localhost:3000/isbn/9780141439518    # 502 {"message":"The book data source could not be reached."}
+
+# a name that means nothing, rejected before the data source is consulted
+curl -i "http://localhost:3000/author/%20"           # 400 {"message":"'author' must not be empty."}
+curl -i "http://localhost:3000/title/%20"            # 400 {"message":"'title' must not be empty."}
 
 curl -X POST http://localhost:3000/customer/auth/review/9780141439518 \
   -H "Authorization: Bearer <accessToken>" -H "Content-Type: application/json" \
